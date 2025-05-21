@@ -184,7 +184,7 @@ def train_agent(episodes=100000):
     return agent
 
 
-def human_vs_agent(trained_agent):
+def human_vs_agent(trained_agent = QLearningAgent()):
     game = TicTacToe()
     game.reset()
     current_player = random.choice(["X", "O"])
@@ -243,68 +243,73 @@ def human_vs_agent(trained_agent):
     game.print_board()
 
 
+def main():
 # Treinar o agente
-while True:
-    trained_agent = train_agent()
-    print("\n\n", len(trained_agent.q_table), "\n\n")
-    time.sleep(5)
-    # print(trained_agent.q_table)
-    # time.sleep(5)
+    while True:
+        trained_agent = train_agent()
+        print("\n\n", len(trained_agent.q_table), "\n\n")
+        time.sleep(5)
+        # print(trained_agent.q_table)
+        # time.sleep(5)
 
-    # Testando um jogo do agente treinado contra ele mesmo
-    game = TicTacToe()
-    game.reset()
-    state = game.board.copy()
-    done = False
-    current_player = "X"
+        # Testando um jogo do agente treinado contra ele mesmo
+        game = TicTacToe()
+        game.reset()
+        state = game.board.copy()
+        done = False
+        current_player = "X"
 
-    while not done:
-        state = [
-            1 if i == current_player else " " if i == " " else -1
-            for i in game.board.copy()
-        ]
-        print("\nTabuleiro atual:")
-        game.print_board()
-        time.sleep(1)
-        # input()
-        action = trained_agent.choose_action(
-            state, game.get_valid_actions(), rand=False
-        )
-        print(
-            "\n\n| ",
-            f"{trained_agent.get_q_value(state, 0):.2}",
-            f"{trained_agent.get_q_value(state, 1):.2}",
-            f"{trained_agent.get_q_value(state, 2):.2}",
-            " |",
-        )
-        print(
-            "| ",
-            f"{trained_agent.get_q_value(state, 3):.2}",
-            f"{trained_agent.get_q_value(state, 4):.2}",
-            f"{trained_agent.get_q_value(state, 5):.2}",
-            " |",
-        )
-        print(
-            "| ",
-            f"{trained_agent.get_q_value(state, 6):.2}",
-            f"{trained_agent.get_q_value(state, 7):.2}",
-            f"{trained_agent.get_q_value(state, 8):.2}",
-            " |",
-        )
-        print("Action: ", action, "q_tble: ", trained_agent.get_q_value(state, action))
-        time.sleep(10)
-        game.play(action, current_player)
+        while not done:
+            state = [
+                1 if i == current_player else " " if i == " " else -1
+                for i in game.board.copy()
+            ]
+            print("\nTabuleiro atual:")
+            game.print_board()
+            time.sleep(1)
+            # input()
+            action = trained_agent.choose_action(
+                state, game.get_valid_actions(), rand=False
+            )
+            print(
+                "\n\n| ",
+                f"{trained_agent.get_q_value(state, 0):.2}",
+                f"{trained_agent.get_q_value(state, 1):.2}",
+                f"{trained_agent.get_q_value(state, 2):.2}",
+                " |",
+            )
+            print(
+                "| ",
+                f"{trained_agent.get_q_value(state, 3):.2}",
+                f"{trained_agent.get_q_value(state, 4):.2}",
+                f"{trained_agent.get_q_value(state, 5):.2}",
+                " |",
+            )
+            print(
+                "| ",
+                f"{trained_agent.get_q_value(state, 6):.2}",
+                f"{trained_agent.get_q_value(state, 7):.2}",
+                f"{trained_agent.get_q_value(state, 8):.2}",
+                " |",
+            )
+            print("Action: ", action, "q_tble: ", trained_agent.get_q_value(state, action))
+            time.sleep(10)
+            game.play(action, current_player)
 
-        if game.is_winner(current_player):
-            print(f"\n{current_player} venceu!")
-            break
-        elif game.is_full():
-            print("\nEmpate!")
-            break
+            if game.is_winner(current_player):
+                print(f"\n{current_player} venceu!")
+                break
+            elif game.is_full():
+                print("\nEmpate!")
+                break
 
-        current_player = "O" if current_player == "X" else "X"
+            current_player = "O" if current_player == "X" else "X"
 
-    print("\nTabuleiro final:", game.print_board())
-    time.sleep(5)
-    while input("Jogar contra a maquina? (s/n): ").lower() == "s":
-        human_vs_agent(trained_agent)
+        print("\nTabuleiro final:", game.print_board())
+        time.sleep(5)
+        while input("Jogar contra a maquina? (s/n): ").lower() == "s":
+            human_vs_agent(trained_agent)
+
+
+if __name__=='__main__':
+    main()
