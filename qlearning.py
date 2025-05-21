@@ -5,6 +5,70 @@ import json
 
 agent = None
 
+class TicTacToe_8x8:
+    def __init__(self):
+        self.board = [" "] * 64
+        self.states_actions = {"X": [], "O": []}
+
+    def reset(self):
+        self.board = [" "] * 64
+        self.states_actions = {"X": [], "O": []}
+
+    def is_winner(self, player):
+        winning_combinations = [
+            (0, 1, 2, 3),
+            (0, -1, -2, -3),
+            (0, 8, 16, 24),
+            (0, -8, -16, -24),
+            (0, -7, -14, -21),
+            (0, 7, 14, 21),
+            (0, 9, 18, 27),
+            (0, -9, -18, -27),
+        ]
+
+        for i in range(64):
+            
+            try:
+                for comb in winning_combinations:
+                    winner = []
+                    for sum in comb:
+                        if i + sum > 63 or i + sum < 0:
+                            winner.append(False)
+                        winner.append(self.board[i + sum] == player)
+                        if not all(winner):
+                            break
+                    if all(winner):
+                        return True
+            except:
+                pass
+        return False
+
+    def print_board(self):
+
+        i = 0
+        for j in range(8):
+            print("|", end=" ")
+            for k in range(8):
+                print(self.board[i], end=" ")
+                i += 1
+            print("|")
+
+    def is_full(self):
+        return " " not in self.board
+
+    def get_valid_actions(self):
+        return [i for i in range(64) if self.board[i] == " "]
+
+    def play(self, action, player):
+        if self.board[action] == " ":
+            self.board[action] = player
+            return True
+        return False
+    def get_state(self, current_player):
+        return [
+                1 if i == current_player else " " if i == " " else -1
+                for i in self.board.copy()
+            ]
 
 class TicTacToe:
     def __init__(self):
@@ -52,6 +116,11 @@ class TicTacToe:
             self.board[action] = player
             return True
         return False
+    def get_state(self, current_player):
+        return [
+                1 if i == current_player else " " if i == " " else -1
+                for i in self.board.copy()
+            ]
 
 
 class QLearningAgent:
@@ -61,11 +130,11 @@ class QLearningAgent:
         self.gamma = gamma
         self.epsilon = epsilon
 
-    def save_q_table(self, caminho="q_table.json"):
+    def save_q_table(self, caminho="q_table_8x8.json"):
         with open(caminho, "w", encoding="utf-8") as arquivo:
             json.dump(self.q_table, arquivo, ensure_ascii=False, indent=4)
 
-    def load_q_table(self, caminho="q_table.json"):
+    def load_q_table(self, caminho="q_table_8x8.json"):
         try:
             with open(caminho, "r", encoding="utf-8") as arquivo:
                 self.q_table = json.load(arquivo)
@@ -112,24 +181,22 @@ class QLearningAgent:
 
 
 # Função de treinamento: agente joga contra si mesmo
-def train_agent(episodes=100000):
+def train_agent(episodes=10000):
     global agent
     if not agent:
         agent = QLearningAgent(epsilon=0.1)
-    game = TicTacToe()
+    game = TicTacToe_8x8()
 
     for e in range(episodes):
 
         if e % 1000 == 0:
             print(e)
         game.reset()
-        state = game.board.copy()
         done = False
         current_player = "X"
-        state = [
-            1 if i == current_player else " " if i == " " else -1
-            for i in game.board.copy()
-        ]
+        
+        state = game.get_state(current_player=current_player)
+        
         last_state = None
         last_action = None
         last_next_state = None
@@ -156,10 +223,7 @@ def train_agent(episodes=100000):
                 reward_x = reward_o = 0
 
             # next_state = game.board.copy()
-            next_state = [
-                1 if i == current_player else " " if i == " " else -1
-                for i in game.board.copy()
-            ]
+            next_state = game.get_state(current_player)
 
             if current_player == "X":
                 if reward_x:
@@ -175,10 +239,7 @@ def train_agent(episodes=100000):
             last_next_state = next_state.copy()
             last_action = action
 
-            state = [
-                1 if i == current_player else " " if i == " " else -1
-                for i in game.board.copy()
-            ]
+            state = game.get_state(current_player)
     agent.save_q_table()
 
     return agent
@@ -205,27 +266,11 @@ def human_vs_agent(trained_agent = QLearningAgent()):
             action = trained_agent.choose_action(
                 state, game.get_valid_actions(), rand=False
             )
-            print(
-                "\n| ",
-                f"{trained_agent.get_q_value(state, 0):.2}",
-                f"{trained_agent.get_q_value(state, 1):.2}",
-                f"{trained_agent.get_q_value(state, 2):.2}",
-                " |",
-            )
-            print(
-                "| ",
-                f"{trained_agent.get_q_value(state, 3):.2}",
-                f"{trained_agent.get_q_value(state, 4):.2}",
-                f"{trained_agent.get_q_value(state, 5):.2}",
-                " |",
-            )
-            print(
-                "| ",
-                f"{trained_agent.get_q_value(state, 6):.2}",
-                f"{trained_agent.get_q_value(state, 7):.2}",
-                f"{trained_agent.get_q_value(state, 8):.2}",
-                " |\n",
-            )
+            for j in range(8):
+                print("| ", end='') 
+                for i in range(8):
+                    print(f"{trained_agent.get_q_value(state, j*8 + i):.2}", end=' ')
+                print(" |")
             print(f"Agente escolheu a jogada: {action}")
 
         game.play(action, current_player)
@@ -253,17 +298,14 @@ def main():
         # time.sleep(5)
 
         # Testando um jogo do agente treinado contra ele mesmo
-        game = TicTacToe()
+        game = TicTacToe_8x8()
         game.reset()
         state = game.board.copy()
         done = False
         current_player = "X"
 
         while not done:
-            state = [
-                1 if i == current_player else " " if i == " " else -1
-                for i in game.board.copy()
-            ]
+            state = game.get_state(current_player)
             print("\nTabuleiro atual:")
             game.print_board()
             time.sleep(1)
@@ -271,29 +313,13 @@ def main():
             action = trained_agent.choose_action(
                 state, game.get_valid_actions(), rand=False
             )
-            print(
-                "\n\n| ",
-                f"{trained_agent.get_q_value(state, 0):.2}",
-                f"{trained_agent.get_q_value(state, 1):.2}",
-                f"{trained_agent.get_q_value(state, 2):.2}",
-                " |",
-            )
-            print(
-                "| ",
-                f"{trained_agent.get_q_value(state, 3):.2}",
-                f"{trained_agent.get_q_value(state, 4):.2}",
-                f"{trained_agent.get_q_value(state, 5):.2}",
-                " |",
-            )
-            print(
-                "| ",
-                f"{trained_agent.get_q_value(state, 6):.2}",
-                f"{trained_agent.get_q_value(state, 7):.2}",
-                f"{trained_agent.get_q_value(state, 8):.2}",
-                " |",
-            )
+            for j in range(8):
+                print("| ", end='') 
+                for i in range(8):
+                    print(f"{trained_agent.get_q_value(state, j*8 + i):.2}", end=' ')
+                print(" |")
             print("Action: ", action, "q_tble: ", trained_agent.get_q_value(state, action))
-            time.sleep(10)
+            time.sleep(1)
             game.play(action, current_player)
 
             if game.is_winner(current_player):
@@ -307,8 +333,8 @@ def main():
 
         print("\nTabuleiro final:", game.print_board())
         time.sleep(5)
-        while input("Jogar contra a maquina? (s/n): ").lower() == "s":
-            human_vs_agent(trained_agent)
+        #while input("Jogar contra a maquina? (s/n): ").lower() == "s":
+        #    human_vs_agent(trained_agent)
 
 
 if __name__=='__main__':
