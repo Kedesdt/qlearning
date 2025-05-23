@@ -6,6 +6,132 @@ import json
 agent = None
 
 
+class TicTacToe_custom:
+    def __init__(self, lado, vitoria):
+        self.vitoria = vitoria
+        self.lado = lado
+        self.board = [" "] * self.lado * self.lado
+        self.states_actions = {"X": [], "O": []}
+
+    def reset(self):
+        self.board = [" "] * self.lado * self.lado
+        self.states_actions = {"X": [], "O": []}
+
+    def is_winner(self, player):
+        winning_combinations = [
+            [i for i in range(self.vitoria)],
+            [-i for i in range(self.vitoria)],
+            [i * self.lado for i in range(self.vitoria)],
+            [-i * self.lado for i in range(self.vitoria)],
+            [-i * (self.lado - 1) for i in range(self.vitoria)],
+            [i * (self.lado - 1) for i in range(self.vitoria)],
+            [i * (self.lado + 1) for i in range(self.vitoria)],
+            [-i * (self.lado + 1) for i in range(self.vitoria)],
+        ]
+
+        # diagonais descendo
+        for coluna in range(0, self.lado - self.vitoria + 1):
+            for linha in range(0, self.lado - self.vitoria + 1):
+                i = coluna + self.lado * linha
+                try:
+                    comb = winning_combinations[6]
+                    winner = []
+                    for sum in comb:
+                        if i + sum >= self.lado * self.lado or i + sum < 0:
+                            winner.append(False)
+                        winner.append(self.board[i + sum] == player)
+                        if not all(winner):
+                            break
+                    if all(winner):
+                        return True
+                except:
+                    pass
+
+        # diagonais subindo
+        for coluna in range(0, self.lado - self.vitoria + 1):
+            for linha in range(self.vitoria - 1, self.lado):
+                i = coluna + self.lado * linha
+                try:
+                    comb = winning_combinations[4]
+                    winner = []
+                    for sum in comb:
+                        if i + sum >= self.lado * self.lado or i + sum < 0:
+                            winner.append(False)
+                        winner.append(self.board[i + sum] == player)
+                        if not all(winner):
+                            break
+                    if all(winner):
+                        return True
+                except:
+                    pass
+
+        # horizontais pra frente
+        for coluna in range(0, self.lado - self.vitoria + 1):
+            for linha in range(0, self.lado):
+                i = coluna + self.lado * linha
+                try:
+                    comb = winning_combinations[0]
+                    winner = []
+                    for sum in comb:
+                        if i + sum > self.lado * self.lado or i + sum < 0:
+                            winner.append(False)
+                        winner.append(self.board[i + sum] == player)
+                        if not all(winner):
+                            break
+                    if all(winner):
+                        return True
+                except:
+                    pass
+
+        # verticais para baixo
+        for coluna in range(0, self.lado):
+            for linha in range(0, self.lado - self.vitoria + 1):
+                i = coluna + self.lado * linha
+                try:
+                    comb = winning_combinations[2]
+                    winner = []
+                    for sum in comb:
+                        if i + sum > self.lado * self.lado or i + sum < 0:
+                            winner.append(False)
+                        winner.append(self.board[i + sum] == player)
+                        if not all(winner):
+                            break
+                    if all(winner):
+                        return True
+                except:
+                    pass
+
+        return False
+
+    def print_board(self):
+
+        i = 0
+        for j in range(self.lado):
+            print("|", end=" ")
+            for k in range(self.lado):
+                print(self.board[i], end=" ")
+                i += 1
+            print("|")
+
+    def is_full(self):
+        return " " not in self.board
+
+    def get_valid_actions(self):
+        return [i for i in range(self.lado * self.lado) if self.board[i] == " "]
+
+    def play(self, action, player):
+        if self.board[action] == " ":
+            self.board[action] = player
+            return True
+        return False
+
+    def get_state(self, current_player):
+        return [
+            1 if i == current_player else " " if i == " " else -1
+            for i in self.board.copy()
+        ]
+
+
 class TicTacToe_4x4:
     def __init__(self):
         self.lado = 4
@@ -48,7 +174,7 @@ class TicTacToe_4x4:
 
         # diagonais subindo
         for coluna in range(0, 1):
-            for linha in range(4, 5):
+            for linha in range(3, 4):
                 i = coluna + self.lado * linha
                 try:
                     comb = winning_combinations[4]
@@ -390,7 +516,7 @@ def train_agent(episodes=1000000):
     global agent
     if not agent:
         agent = QLearningAgent(epsilon=0.1)
-    game = TicTacToe_4x4()
+    game = TicTacToe_custom(5, 4)
 
     for e in range(episodes):
 
@@ -445,15 +571,16 @@ def train_agent(episodes=1000000):
             last_action = action
 
             state = game.get_state(current_player)
-        if e % 10000 == 0:
+        if e % 20000 == 0:
             game.print_board()
+            print()
     agent.save_q_table()
 
     return agent
 
 
 def human_vs_agent(trained_agent=QLearningAgent()):
-    game = TicTacToe_4x4()
+    game = TicTacToe_custom(5, 4)
     game.reset()
     current_player = random.choice(["X", "O"])
 
@@ -503,14 +630,14 @@ def human_vs_agent(trained_agent=QLearningAgent()):
 def main():
     # Treinar o agente
     while True:
-        trained_agent = train_agent()
+        trained_agent = train_agent(episodes=1000000)
         print("\n\n", len(trained_agent.q_table), "\n\n")
         time.sleep(5)
         # print(trained_agent.q_table)
         # time.sleep(5)
 
         # Testando um jogo do agente treinado contra ele mesmo
-        game = TicTacToe_4x4()
+        game = TicTacToe_custom(5, 4)
         game.reset()
         state = game.board.copy()
         done = False
